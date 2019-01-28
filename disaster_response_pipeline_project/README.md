@@ -6,8 +6,22 @@ This project holds repository that contains code for application which can be us
 The app uses a ML model to categorize any new messages received, and the repository also contains the code used to train the model and to prepare any new datasets for model training purposes.
 
 ## File Descriptions
-process_data.py: This code takes as its input csv files containing message data and message categories (labels), and creates an SQLite database containing a merged and cleaned version of this data.
-train_classifier.py: This code takes the SQLite database produced by process_data.py as an input and uses the data contained within it to train and tune a ML model for categorizing messages. The output is a pickle file containing the fitted model. Test evaluation metrics are also printed as part of the training process.
+ETL Pipeline Data cleaning pipeline contained in data/process_data.py:
+Loads the messages and categories datasets
+Merges the two datasets
+Cleans the data
+Stores it in a SQLite database
+
+ML Pipeline Machine learning pipeline contained in model/train_classifier.py:
+Loads data from the SQLite database
+Splits the dataset into training and test sets
+Builds a text processing and machine learning pipeline
+Trains and tunes a model using GridSearchCV
+Outputs results on the test set
+Exports the final model as a pickle file
+
+Flask Web App Web app where an emergency worker can input a new message and get classification results in several categories. The web app also displays visualizations of the data.
+
 
 ### Instructions:
 1. Run the following commands in the project's root directory to set up your database and model.
