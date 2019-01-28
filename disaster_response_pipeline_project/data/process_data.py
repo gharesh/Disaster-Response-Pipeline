@@ -3,6 +3,15 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 def load_data(messages_filepath, categories_filepath):
+    """Load and merge messages and categories datasets
+    
+    Args:
+    messages_filepath: string. Filepath for csv file containing messages dataset.
+    categories_filepath: string. Filepath for csv file containing categories dataset.
+       
+    Returns:
+    df: dataframe. Dataframe containing merged content of messages and categories datasets.
+    """
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     # merge datasets
@@ -12,6 +21,15 @@ def load_data(messages_filepath, categories_filepath):
    
     
 def clean_data(df):
+    """Clean dataframe by removing duplicates and converting categories from strings 
+    to binary values.
+    
+    Args:
+    df: dataframe. Dataframe containing merged content of messages and categories datasets.
+       
+    Returns:
+    df: dataframe. Dataframe containing cleaned version of input dataframe.
+    """
     # create a dataframe of the 36 individual category columns
     categories = df.categories.str.split(';', expand = True)
     # select the first row of the categories dataframe
@@ -28,15 +46,28 @@ def clean_data(df):
         categories[column] = categories[column].astype(str).str[-1]
         # convert column from string to numeric
         categories[column] = pd.to_numeric(categories[column])
+    # Drop the original categories column from `df`
     df.drop('categories', axis = 1, inplace = True)
+    # Concatenate the original dataframe with the new `categories` dataframe
     df = pd.concat([df, categories], axis = 1)
+    # Drop duplicates
     df.drop_duplicates(subset = 'id', inplace = True)
     
     return df
 
 def save_data(df, database_filename):
+    """Save cleaned data into an SQLite database.
+    
+    Args:
+    df: dataframe. Dataframe containing cleaned version of merged message and 
+    categories data.
+    database_filename: string. Filename for output database.
+       
+    Returns:
+    None
+    """
     engine = create_engine('sqlite:///{}'.format(database_filename))
-    df.to_sql('Message', engine, index=False) 
+    df.to_sql('Message', engine, index=False, chunksize=500, if_exists='append') 
 
 
 def main():
