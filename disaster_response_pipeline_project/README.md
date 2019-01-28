@@ -7,18 +7,18 @@ The app uses a ML model to categorize any new messages received, and the reposit
 
 ## File Descriptions
 ETL Pipeline Data cleaning pipeline contained in data/process_data.py:
-Loads the messages and categories datasets
-Merges the two datasets
-Cleans the data
-Stores it in a SQLite database
+    Loads the messages and categories datasets
+    Merges the two datasets
+    Cleans the data
+    Stores it in a SQLite database
 
 ML Pipeline Machine learning pipeline contained in model/train_classifier.py:
-Loads data from the SQLite database
-Splits the dataset into training and test sets
-Builds a text processing and machine learning pipeline
-Trains and tunes a model using GridSearchCV
-Outputs results on the test set
-Exports the final model as a pickle file
+    Loads data from the SQLite database
+    Splits the dataset into training and test sets
+    Builds a text processing and machine learning pipeline
+    Trains and tunes a model using GridSearchCV
+    Outputs results on the test set
+    Exports the final model as a pickle file
 
 Flask Web App Web app where an emergency worker can input a new message and get classification results in several categories. The web app also displays visualizations of the data.
 
