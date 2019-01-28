@@ -20,7 +20,7 @@ The app uses a ML model to categorize any new messages received, and the reposit
     - Outputs results on the test set
     - Exports the final model as a pickle file
 
-3. Flask Web App Web app where an emergency worker can input a new message and get classification results in several categories. The web app also displays visualizations of the data.
+3. Flask Web App is the web application the employees can use during emergencies to classify messages into respective categories. The web app also displays visualizations of the data.
 
 
 ### Instructions:
