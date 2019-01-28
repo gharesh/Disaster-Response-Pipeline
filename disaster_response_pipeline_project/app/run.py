@@ -1,7 +1,7 @@
 import json
 import plotly
 import pandas as pd
-
+import numpy as np
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
@@ -15,6 +15,15 @@ from sqlalchemy import create_engine
 app = Flask(__name__)
 
 def tokenize(text):
+    """
+    Remove capitalization and special characters and lemmatize texts
+    
+    Args:
+    text: string. String containing message for processing
+       
+    Returns:
+    clean_tokens: list of strings. List containing normalized and stemmed word tokens
+    """  
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
@@ -26,17 +35,20 @@ def tokenize(text):
     return clean_tokens
 
 def length_of_messages(data):
+    ''' Calculates the length of text in message
+    '''
     return np.array([len(text) for text in data]).reshape(-1, 1)
-
+    
+database_filepath = 'data/DisasterResponse.db'
 # load data
-engine = create_engine('sqlite:///../data/FigureEightMain.db')
-df = pd.read_sql_table('Message_categories', engine)
+engine = create_engine('sqlite:///{}'.format(database_filepath))
+df = pd.read_sql_table('Message', engine)
 
 # load model
-model = joblib.load("../models/model.p")
+model = joblib.load("/home/workspace/models/classifier.pkl")
 
 # compute length of messages
-df['text_length'] = compute_text_length(df['message'])
+df['text_length'] = length_of_messages(df['message'])
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
@@ -44,8 +56,7 @@ df['text_length'] = compute_text_length(df['message'])
 
 def index():
     
-    # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
+    # extract data needed for visuals   
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
