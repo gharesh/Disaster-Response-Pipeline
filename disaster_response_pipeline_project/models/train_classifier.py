@@ -1,5 +1,6 @@
 import sys
 import nltk
+import pickle
 nltk.download(['punkt', 'wordnet'])
 import warnings
 warnings.filterwarnings("ignore")
@@ -14,6 +15,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, make_scorer
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.metrics import classification_report
 import re
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -24,12 +26,20 @@ from sklearn.preprocessing import FunctionTransformer
 def load_data(database_filepath):
     """
     Load data from SQLite database and split into features and target
+    Args:
+    database_filepath: string. Filename for SQLite database containing cleaned message data.
+       
+    Returns:
+    X: dataframe. Dataframe containing features dataset.
+    y: dataframe. Dataframe containing labels dataset.
+    categories: list of strings. List containing category names.
     """
+    # Load data from database
     engine = create_engine('sqlite:///{}'.format(database_filepath))
     df = pd.read_sql_table('Message', engine)
     # drop columns with null
     df = df[~(df.isnull().any(axis=1))|((df.original.isnull())&~(df.offer.isnull()))]
-        
+    # Create X and y datasets    
     X = df['message']
     y = df.iloc[:,4:]
     categories = y.columns
@@ -39,6 +49,12 @@ def load_data(database_filepath):
 def tokenize(text):
     """
     Remove capitalization and special characters and lemmatize texts
+    
+    Args:
+    text: string. String containing message for processing
+       
+    Returns:
+    clean_tokens: list of strings. List containing normalized and stemmed word tokens
     """  
     text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
     tokens = word_tokenize(text)
@@ -59,29 +75,46 @@ def length_of_messages(data):
 def build_model():
     """
     Build model with a pipeline
+    Args:
+    None
+       
+    Returns:
+    cv: gridsearchcv object. Gridsearchcv object that transforms the data, creates the 
+    model object and finds the optimal model parameters.
     """
 
-    # create pipeline
+    # Create pipeline
     pipeline = Pipeline([
-        ('features', FeatureUnion([('text', Pipeline([('vect', CountVectorizer(tokenizer=tokenize)),
-                                                     ('tfidf', TfidfTransformer()),
-                                                     ])),
-                                  ('length', Pipeline([('count', FunctionTransformer(length_of_messages, validate=False))]))]
-                                 )),
-        ('clf', MultiOutputClassifier(RandomForestClassifier()))])
+        ('vect', CountVectorizer(tokenizer = tokenize, min_df = 5)),
+        ('tfidf', TfidfTransformer(use_idf = True)),
+        ('clf', MultiOutputClassifier(RandomForestClassifier(n_estimators = 10,
+                                                             min_samples_split = 10)))
+    ])
+    
+    # Create parameters dictionary
+    parameters = {'vect__min_df': [1, 5],
+                  'tfidf__use_idf':[True, False],
+                  'clf__estimator__n_estimators':[10, 25], 
+                  'clf__estimator__min_samples_split':[2, 5, 10]}
+    
+    
+    # Create grid search object
+    cv = GridSearuchCV(pipeline, param_grid = parameters, verbose = 10)
 
-    # use GridSearch to tune model with optimal parameters
-    parameters = {'features__text__vect__ngram_range':[(1,2),(2,2)],
-            'clf__estimator__n_estimators':[50, 100]
-             }
-    model = GridSearchCV(pipeline, parameters)
-
-    return model
+    return cv
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    """
-    Show precision, recall, f1-score of model scored on testing set
-    """    
+    """Returns classification report for the model
+    
+    Args:
+    model: model object. Fitted model object.
+    X_test: dataframe. Dataframe containing test features dataset.
+    Y_test: dataframe. Dataframe containing test labels dataset.
+    category_names: list of strings. List containing category names.
+    
+    Returns:
+    None
+    """ 
     
     # make predictions with model
     Y_pred = model.predict(X_test)
@@ -94,6 +127,8 @@ def evaluate_model(model, X_test, Y_test, category_names):
 def save_model(model, model_filepath):
     """
     Pickle model to designated file
+    model: model object. Fitted model object.
+    model_filepath: string. Filepath for where fitted model should be saved
     """
     pickle.dump(model, open(model_filepath, 'wb'))
 
