@@ -99,7 +99,7 @@ def build_model():
     
     
     # Create grid search object
-    cv = GridSearuchCV(pipeline, param_grid = parameters, verbose = 10)
+    cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 10)
 
     return cv
 
